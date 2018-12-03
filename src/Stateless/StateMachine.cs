@@ -65,8 +65,15 @@ namespace Stateless
         /// <param name="firingMode">Optional specification of fireing mode.</param>
         public StateMachine(Func<TState> stateAccessor, Action<TState> stateMutator, FiringMode firingMode) : this()
         {
-            _stateAccessor = stateAccessor ?? throw new ArgumentNullException(nameof(stateAccessor));
-            _stateMutator = stateMutator ?? throw new ArgumentNullException(nameof(stateMutator));
+            if((_stateAccessor = stateAccessor) == null)
+            {
+                throw new ArgumentNullException(nameof(stateAccessor));
+            }
+
+            if((_stateMutator = stateMutator) == null)
+            {
+                throw new ArgumentNullException(nameof(stateMutator));
+            }
 
             _firingMode = firingMode;
         }
@@ -166,7 +173,8 @@ namespace Stateless
 
         StateRepresentation GetRepresentation(TState state)
         {
-            if (!_stateConfiguration.TryGetValue(state, out StateRepresentation result))
+            StateRepresentation result;
+            if (!_stateConfiguration.TryGetValue(state, out result))
             {
                 result = new StateRepresentation(state);
                 _stateConfiguration.Add(state, result);
@@ -343,61 +351,52 @@ namespace Stateless
         void InternalFireOne(TTrigger trigger, params object[] args)
         {
             // If this is a trigger with parameters, we must validate the parameter(s)
-            if (_triggerConfiguration.TryGetValue(trigger, out TriggerWithParameters configuration))
+            TriggerWithParameters configuration;
+            if (_triggerConfiguration.TryGetValue(trigger, out configuration))
                 configuration.ValidateParameters(args);
 
             var source = State;
             var representativeState = GetRepresentation(source);
 
             // Try to find a trigger handler, either in the current state or a super state.
-            if (!representativeState.TryFindHandler(trigger, args, out TriggerBehaviourResult result))
+            TriggerBehaviourResult result;
+            if (!representativeState.TryFindHandler(trigger, args, out result))
             {
                 _unhandledTriggerAction.Execute(representativeState.UnderlyingState, trigger, result?.UnmetGuardConditions);
                 return;
             }
 
-            switch (result.Handler)
+            TState destination;
+
+            if (result.Handler is IgnoredTriggerBehaviour)
             {
-                // Check if this trigger should be ignored
-                case IgnoredTriggerBehaviour _:
-                    return;
-                // Handle special case, re-entry in superstate
-                // Check if it is an internal transition, or a transition from one state to another.
-                case ReentryTriggerBehaviour handler:
-                    {
-                        // Handle transition, and set new state
-                        var transition = new Transition(source, handler.Destination, trigger);
-                        HandleReentryTrigger(args, representativeState, transition);
-                        break;
-                    }
-                case DynamicTriggerBehaviour _ when (result.Handler.ResultsInTransitionFrom(source, args, out TState destination)):
-                {
-                    // Handle transition, and set new state
-                    var transition = new Transition(source, destination, trigger);
-
-                    HandleTransitioningTrigger(args, representativeState, transition);
-
-                    break;
-                }
-                case TransitioningTriggerBehaviour _ when (result.Handler.ResultsInTransitionFrom(source, args, out TState destination)):
-                    {
-                        // Handle transition, and set new state
-                        var transition = new Transition(source, destination, trigger);
-
-                        HandleTransitioningTrigger(args, representativeState, transition);
-
-                        break;
-                    }
-                case InternalTriggerBehaviour _:
-                {
-                    // Internal transitions does not update the current state, but must execute the associated action.
-                    var transition = new Transition(source, source, trigger);
-                    CurrentRepresentation.InternalAction(transition, args);
-                    break;
-                }
-                default:
-                    throw new InvalidOperationException("State machine configuration incorrect, no handler for trigger.");
+                return;
             }
+
+            if (result.Handler is ReentryTriggerBehaviour)
+            {
+                var handler = (ReentryTriggerBehaviour)result.Handler;
+                var transition = new Transition(source, handler.Destination, trigger);
+                HandleReentryTrigger(args, representativeState, transition);
+                return;
+            }
+
+            if ((result.Handler is DynamicTriggerBehaviour || result.Handler is TransitioningTriggerBehaviour) && 
+                result.Handler.ResultsInTransitionFrom(source, args, out destination))
+            {
+                var transition = new Transition(source, destination, trigger);
+                HandleTransitioningTrigger(args, representativeState, transition);
+                return;
+            }
+
+            if (result.Handler is InternalTriggerBehaviour)
+            {
+                var transition = new Transition(source, source, trigger);
+                CurrentRepresentation.InternalAction(transition, args);
+                return;
+            }
+
+            throw new InvalidOperationException("State machine configuration incorrect, no handler for trigger.");
         }
 
         private void HandleReentryTrigger(object[] args, StateRepresentation representativeState, Transition transition)

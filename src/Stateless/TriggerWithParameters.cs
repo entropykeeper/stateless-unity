@@ -20,7 +20,10 @@ namespace Stateless
             public TriggerWithParameters(TTrigger underlyingTrigger, params Type[] argumentTypes)
             {
                 _underlyingTrigger = underlyingTrigger;
-                _argumentTypes = argumentTypes ?? throw new ArgumentNullException(nameof(argumentTypes));
+                if ((_argumentTypes = argumentTypes) == null)
+                {
+                    throw new ArgumentNullException(nameof(argumentTypes));
+                }
             }
 
             /// <summary>

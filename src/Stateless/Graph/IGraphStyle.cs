@@ -62,8 +62,10 @@ namespace Stateless.Graph
             foreach (var transit in transitions)
             {
                 string line = null;
-                if (transit is StayTransition stay)
+                if (transit is StayTransition)
                 {
+                    var stay = (StayTransition) transit;
+
                     if (!stay.ExecuteEntryExitActions)
                     {
                         line = FormatOneTransition(stay.SourceState.NodeName, stay.Trigger.UnderlyingTrigger.ToString(),
@@ -84,16 +86,18 @@ namespace Stateless.Graph
                 }
                 else
                 {
-                    if (transit is FixedTransition fix)
+                    if (transit is FixedTransition)
                     {
+                        var fix = (FixedTransition) transit;
                         line = FormatOneTransition(fix.SourceState.NodeName, fix.Trigger.UnderlyingTrigger.ToString(),
                             fix.DestinationEntryActions.Select(x => x.Method.Description),
                             fix.DestinationState.NodeName, fix.Guards.Select(x => x.Description));
                     }
                     else
                     {
-                        if (transit is DynamicTransition dyn)
+                        if (transit is DynamicTransition)
                         {
+                            var dyn = (DynamicTransition) transit;
                             line = FormatOneTransition(dyn.SourceState.NodeName, dyn.Trigger.UnderlyingTrigger.ToString(),
                                 dyn.DestinationEntryActions.Select(x => x.Method.Description),
                                 dyn.DestinationState.NodeName, new List<string> { dyn.Criterion });

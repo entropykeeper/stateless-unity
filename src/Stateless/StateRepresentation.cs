@@ -34,7 +34,8 @@ namespace Stateless
 
             public bool CanHandle(TTrigger trigger, params object[] args)
             {
-                return TryFindHandler(trigger, args, out TriggerBehaviourResult unused);
+                TriggerBehaviourResult unused;
+                return TryFindHandler(trigger, args, out unused);
             }
 
             public bool TryFindHandler(TTrigger trigger, object[] args, out TriggerBehaviourResult handler)
@@ -46,7 +47,8 @@ namespace Stateless
             bool TryFindLocalHandler(TTrigger trigger, object[] args, out TriggerBehaviourResult handlerResult)
             {
                 // Get list of candidate trigger handlers
-                if (!TriggerBehaviours.TryGetValue(trigger, out ICollection<TriggerBehaviour> possible))
+                ICollection<TriggerBehaviour> possible;
+                if (!TriggerBehaviours.TryGetValue(trigger, out possible))
                 {
                     handlerResult = null;
                     return false;
@@ -212,7 +214,8 @@ namespace Stateless
                 StateRepresentation aStateRep = this;
                 while (aStateRep != null)
                 {
-                    if (aStateRep.TryFindLocalHandler(transition.Trigger, args, out TriggerBehaviourResult result))
+                    TriggerBehaviourResult result;
+                    if (aStateRep.TryFindLocalHandler(transition.Trigger, args, out result))
                     {
                         // Trigger handler found in this state
                         if (result.Handler is InternalTriggerBehaviour.Async)
@@ -231,7 +234,8 @@ namespace Stateless
             }
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)
             {
-                if (!TriggerBehaviours.TryGetValue(triggerBehaviour.Trigger, out ICollection<TriggerBehaviour> allowed))
+                ICollection<TriggerBehaviour> allowed;
+                if (!TriggerBehaviours.TryGetValue(triggerBehaviour.Trigger, out allowed))
                 {
                     allowed = new List<TriggerBehaviour>();
                     TriggerBehaviours.Add(triggerBehaviour.Trigger, allowed);

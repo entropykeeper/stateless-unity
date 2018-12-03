@@ -11,7 +11,11 @@ namespace Stateless.Reflection
     {
         internal StateMachineInfo(IEnumerable<StateInfo> states, Type stateType, Type triggerType)
         {
-            States = states?.ToList() ?? throw new ArgumentNullException(nameof(states));
+            if ((States = states?.ToList()) == null)
+            {
+                throw new ArgumentNullException(nameof(states));
+            }
+
             StateType = stateType;
             TriggerType = triggerType;
         }

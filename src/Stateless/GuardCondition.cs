@@ -22,8 +22,15 @@ namespace Stateless
 
             internal GuardCondition(Func<object[], bool> guard, Reflection.InvocationInfo description)
             {
-                Guard = guard ?? throw new ArgumentNullException(nameof(guard));
-                _methodDescription = description ?? throw new ArgumentNullException(nameof(description));
+                if((Guard = guard) == null)
+                {
+                    throw new ArgumentNullException(nameof(guard));
+                }
+
+                if((_methodDescription = description) == null)
+                {
+                    throw new ArgumentNullException(nameof(description));
+                }
             }
 
             internal Func<object[], bool> Guard { get; }

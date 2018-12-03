@@ -86,7 +86,11 @@ namespace Stateless.Reflection
             IEnumerable<InvocationInfo> exitActions)
         {
             UnderlyingState = underlyingState;
-            IgnoredTriggers = ignoredTriggers ?? throw new ArgumentNullException(nameof(ignoredTriggers));
+            if((IgnoredTriggers = ignoredTriggers) == null)
+            {
+                throw new ArgumentNullException(nameof(ignoredTriggers));
+            }
+
             EntryActions = entryActions;
             ActivateActions = activateActions;
             DeactivateActions = deactivateActions;
@@ -100,9 +104,20 @@ namespace Stateless.Reflection
             IEnumerable<DynamicTransitionInfo> dynamicTransitions)
         {
             Superstate = superstate;
-            Substates = substates ?? throw new ArgumentNullException(nameof(substates));
-            FixedTransitions = transitions ?? throw new ArgumentNullException(nameof(transitions));
-            DynamicTransitions = dynamicTransitions ?? throw new ArgumentNullException(nameof(dynamicTransitions));
+            if((Substates = substates) == null)
+            {
+                throw new ArgumentNullException(nameof(substates));
+            }
+
+            if((FixedTransitions = transitions) == null)
+            {
+                throw new ArgumentNullException(nameof(transitions));
+            }
+
+            if((DynamicTransitions = dynamicTransitions) == null)
+            {
+                throw new ArgumentNullException(nameof(dynamicTransitions));
+            }
         }
 
         /// <summary>
